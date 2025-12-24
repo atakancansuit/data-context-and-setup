@@ -20,7 +20,19 @@ class Order:
         and filters out non-delivered orders unless specified
         """
         # Hint: Within this instance method, you have access to the instance of the class Order in the variable self, as well as all its attributes
-        pass  # YOUR CODE HERE
+        orders = self.data['orders'].copy()
+        orders = orders[orders['order_status'] == 'delivered']
+        date_cols = ['order_purchase_timestamp', 'order_approved_at', 'order_delivered_carrier_date',
+             'order_delivered_customer_date', 'order_estimated_delivery_date']
+        for col in date_cols:
+          orders[col] = pd.to_datetime(orders[col])
+    
+        orders["wait_time"] = ((orders["order_delivered_customer_date"] - orders["order_purchase_timestamp"]).dt.total_seconds() / 86400)
+        orders["expected_wait_time"] = ((orders["order_estimated_delivery_date"] - orders["order_purchase_timestamp"]).dt.total_seconds() / 86400)
+        orders["delay_vs_expected"] = orders["wait_time"] - orders["expected_wait_time"]
+        orders.loc[orders['delay_vs_expected'] < 0, 'delay_vs_expected'] = 0
+        
+        return orders[['order_id', 'wait_time', 'expected_wait_time', 'delay_vs_expected', 'order_status']]
 
     def get_review_score(self):
         """
