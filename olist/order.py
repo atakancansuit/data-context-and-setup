@@ -39,7 +39,20 @@ class Order:
         Returns a DataFrame with:
         order_id, dim_is_five_star, dim_is_one_star, review_score
         """
-        pass  # YOUR CODE HERE
+        reviews = self.data['order_reviews'].copy()
+        def check_rate(score):
+            if score == 5:
+                return 1
+            else:
+                return 0
+        def check_rate_1(score):
+            if score == 1:
+                return 0
+            else:
+                return 1    
+        reviews["dim_is_five_star"] = reviews["review_score"].apply(check_rate)
+        reviews["dim_is_one_star"] = reviews["review_score"].apply(check_rate_1)
+        return reviews[['order_id', 'dim_is_five_star', 'dim_is_one_star', 'review_score']]
 
     def get_number_items(self):
         """
