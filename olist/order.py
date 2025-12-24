@@ -89,15 +89,32 @@ class Order:
         """
         pass  # YOUR CODE HERE
 
-    def get_training_data(self,
-                          is_delivered=True,
-                          with_distance_seller_customer=False):
+    def get_training_data(self, is_delivered=True, with_distance_seller_customer=False):
         """
-        Returns a clean DataFrame (without NaN), with the all following columns:
-        ['order_id', 'wait_time', 'expected_wait_time', 'delay_vs_expected',
-        'order_status', 'dim_is_five_star', 'dim_is_one_star', 'review_score',
-        'number_of_items', 'number_of_sellers', 'price', 'freight_value',
-        'distance_seller_customer']
+        Tüm özellikleri tek bir DataFrame'de toplar ve modellemeye hazır hale getirir.
         """
-        # Hint: make sure to re-use your instance methods defined above
-        pass  # YOUR CODE HERE
+        # 1. Ana iskeleti oluştur (Wait Time tablosu filtreli olduğu için bunu baz alıyoruz)
+        training_data = self.get_wait_time(is_delivered=is_delivered)
+        
+        # 2. Diğer özellikleri çağır
+        reviews = self.get_review_score()
+        products = self.get_number_items()
+        sellers = self.get_number_sellers()
+        price = self.get_price_and_freight()
+        
+        # 3. Birleştirme (Merge)
+        # 'how' belirtmezsek pandas varsayılan olarak 'inner' join yapar.
+        # Yani sadece her iki tabloda da olan order_id'leri tutar.
+        training_data = training_data.merge(reviews, on='order_id')
+        training_data = training_data.merge(products, on='order_id')
+        training_data = training_data.merge(sellers, on='order_id')
+        training_data = training_data.merge(price, on='order_id')
+        
+        # (Opsiyonel) Mesafe hesabı istenirse onu da ekle (Henüz yazmadıysan burası çalışmaz ama iskelette kalsın)
+        if with_distance_seller_customer:
+            distance = self.get_distance_seller_customer()
+            training_data = training_data.merge(distance, on='order_id')
+        
+        # 4. Temizlik (Drop NaN)
+        # Modeller boş değer sevmez, bu yüzden eksik satırları atıyoruz.
+        return training_data.dropna()
