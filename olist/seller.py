@@ -142,7 +142,32 @@ class Seller:
         'seller_id', 'share_of_five_stars', 'share_of_one_stars', 'review_score'
         """
 
-        pass  # YOUR CODE HERE
+        orders_reviews = self.data['order_reviews']
+        order_items = self.data['order_items']
+
+        # 2. Birleştir (Merge)
+        # Yorumlar 'order_id' ile gelir, ama satıcı bilgisi 'order_items' içindedir.
+        # Bunları eşleştiriyoruz ki hangi yorum kime yapılmış bilelim.
+        matching_table = orders_reviews.merge(order_items, on='order_id')
+
+        # 3. Özel Kodlama (One-Hot Encoding Mantığı)
+        # Eğer puan 5 ise 1 yaz, değilse 0 yaz
+        matching_table['dim_is_five_star'] = matching_table['review_score'].apply(lambda x: 1 if x == 5 else 0)
+        
+        # Eğer puan 1 ise 1 yaz, değilse 0 yaz
+        matching_table['dim_is_one_star'] = matching_table['review_score'].apply(lambda x: 1 if x == 1 else 0)
+
+        # 4. Grupla ve Ortalamasını Al (Groupby)
+        review_score = matching_table.groupby('seller_id', as_index=False).agg({
+            'dim_is_five_star': 'mean', # 1 ve 0'ların ortalaması bize oranı verir!
+            'dim_is_one_star': 'mean',
+            'review_score': 'mean'
+        })
+
+        # 5. Sütun İsimlerini Düzelt (Bizden istenen isimleri verelim)
+        review_score.columns = ['seller_id', 'share_of_five_stars', 'share_of_one_stars', 'review_score']
+
+        return review_score
 
     def get_training_data(self):
         """
